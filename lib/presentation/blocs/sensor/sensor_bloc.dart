@@ -10,7 +10,7 @@ class SensorBloc extends Bloc<SensorEvent, SensorState> {
     on<FetchLatestSensorData>((event, emit) async {
       emit(SensorLoading());
       try {
-        final data = await repository.getLatestSensorData();
+        final data = await repository.getLatestSensorDataWithCache();
         emit(SensorLoaded(data));
       } catch (e) {
         emit(SensorError(e.toString()));
@@ -19,11 +19,7 @@ class SensorBloc extends Bloc<SensorEvent, SensorState> {
     on<FetchSensorHistory>((event, emit) async {
       emit(SensorLoading());
       try {
-        final history = await repository.getSensorHistory(
-          start: event.start,
-          end: event.end,
-          limit: event.limit,
-        );
+        final history = await repository.getSensorHistoryWithCache();
         emit(SensorHistoryLoaded(history));
       } catch (e) {
         emit(SensorError(e.toString()));
