@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../widgets/sensor_monitoring_widget.dart';
+import '../../widgets/sensor_history_widget.dart';
 import '../../blocs/device_control/device_control_bloc.dart';
 import '../../blocs/device_control/device_control_event.dart';
 import '../../blocs/device_control/device_control_state.dart';
@@ -147,6 +148,23 @@ class FarmerDashboardScreen extends StatelessWidget {
                     Text('Blower: OFF'),
                     Text('Sprayer: ON'),
                   ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 350,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text('Riwayat Data Sensor', style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 12),
+                      Expanded(child: SensorHistoryWidget()),
+                    ],
+                  ),
                 ),
               ),
             ),

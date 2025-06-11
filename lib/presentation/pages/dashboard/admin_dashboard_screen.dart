@@ -7,6 +7,7 @@ import '../../blocs/automation_threshold/automation_threshold_bloc.dart';
 import '../../blocs/automation_threshold/automation_threshold_event.dart';
 import '../../blocs/automation_threshold/automation_threshold_state.dart';
 import '../../../data/repositories/automation_threshold_repository.dart';
+import '../../widgets/sensor_history_widget.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -189,6 +190,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     Text('Blower: OFF'),
                     Text('Sprayer: ON'),
                   ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 350,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text('Riwayat Data Sensor', style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 12),
+                      Expanded(child: SensorHistoryWidget()),
+                    ],
+                  ),
                 ),
               ),
             ),

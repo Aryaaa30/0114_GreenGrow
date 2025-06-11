@@ -18,6 +18,14 @@ class SensorLoaded extends SensorState {
   List<Object?> get props => [data];
 }
 
+class SensorHistoryLoaded extends SensorState {
+  final List<SensorDataModel> history;
+  SensorHistoryLoaded(this.history);
+
+  @override
+  List<Object?> get props => [history];
+}
+
 class SensorError extends SensorState {
   final String message;
   SensorError(this.message);

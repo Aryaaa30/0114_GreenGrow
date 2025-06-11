@@ -16,5 +16,18 @@ class SensorBloc extends Bloc<SensorEvent, SensorState> {
         emit(SensorError(e.toString()));
       }
     });
+    on<FetchSensorHistory>((event, emit) async {
+      emit(SensorLoading());
+      try {
+        final history = await repository.getSensorHistory(
+          start: event.start,
+          end: event.end,
+          limit: event.limit,
+        );
+        emit(SensorHistoryLoaded(history));
+      } catch (e) {
+        emit(SensorError(e.toString()));
+      }
+    });
   }
 } 
