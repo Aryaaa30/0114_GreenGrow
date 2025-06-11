@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:greengrow_app/presentation/blocs/auth/auth_bloc.dart';
 import 'package:greengrow_app/presentation/blocs/auth/auth_event.dart';
+import '../../widgets/sensor_monitoring_widget.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -74,10 +75,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   children: const [
                     Text('Monitoring Suhu & Kelembapan', style: TextStyle(fontWeight: FontWeight.bold)),
                     SizedBox(height: 12),
-                    Text('Suhu: 29°C'),
-                    Text('Kelembapan: 65%'),
-                    SizedBox(height: 8),
-                    Text('Status: Normal'),
+                    SensorMonitoringWidget(),
                   ],
                 ),
               ),

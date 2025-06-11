@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/sensor_monitoring_widget.dart';
 
 class FarmerDashboardScreen extends StatelessWidget {
   const FarmerDashboardScreen({super.key});
@@ -22,10 +23,7 @@ class FarmerDashboardScreen extends StatelessWidget {
                   children: const [
                     Text('Monitoring Suhu & Kelembapan', style: TextStyle(fontWeight: FontWeight.bold)),
                     SizedBox(height: 12),
-                    Text('Suhu: 29°C'),
-                    Text('Kelembapan: 65%'),
-                    SizedBox(height: 8),
-                    Text('Status: Normal'),
+                    SensorMonitoringWidget(),
                   ],
                 ),
               ),
