@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/sensor_data_model.dart';
 import '../local/sensor_local_db.dart';
+import '../local/sync_queue_db.dart';
 
 class SensorRepository {
   final Dio dio;
@@ -53,5 +54,26 @@ class SensorRepository {
     } catch (_) {
       return await SensorLocalDb.getAllSensorData();
     }
+  }
+
+  Future<void> syncQueueToBackend() async {
+    final queue = await SyncQueueDb.getQueue();
+    for (final data in queue) {
+      try {
+        await dio.post(
+          '$_baseUrl/sensor',
+          data: {
+            'temperature': data.temperature,
+            'humidity': data.humidity,
+            'status': data.status,
+            'recorded_at': data.recordedAt.toIso8601String(),
+          },
+        );
+      } catch (_) {
+        // Jika gagal, biarkan tetap di queue
+        return;
+      }
+    }
+    await SyncQueueDb.clearQueue();
   }
 } 
