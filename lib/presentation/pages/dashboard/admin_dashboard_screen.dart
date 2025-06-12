@@ -34,6 +34,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.map, size: 32),
+                title: const Text('Peta Greenhouse'),
+                subtitle: const Text('Lihat lokasi semua greenhouse'),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () {
+                  Navigator.pushNamed(context, '/greenhouse-map');
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
             BlocProvider(
               create: (context) => AutomationThresholdBloc(
                 AutomationThresholdRepository(Dio(), const FlutterSecureStorage()),

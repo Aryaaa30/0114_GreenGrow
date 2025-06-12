@@ -4,11 +4,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:greengrow_app/data/repositories/auth_repository.dart';
 import 'package:greengrow_app/data/repositories/auth_repository_impl.dart';
+import 'package:greengrow_app/data/repositories/location_repository.dart';
 import 'package:greengrow_app/presentation/blocs/auth/auth_bloc.dart';
+import 'package:greengrow_app/presentation/blocs/location/location_bloc.dart';
 import 'package:greengrow_app/presentation/pages/auth/login_screen.dart';
 import 'package:greengrow_app/presentation/pages/auth/register_screen.dart';
 import 'package:greengrow_app/presentation/pages/dashboard/admin_dashboard_screen.dart';
 import 'package:greengrow_app/presentation/pages/dashboard/farmer_dashboard_screen.dart';
+import 'package:greengrow_app/presentation/pages/map/greenhouse_map_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,12 +36,23 @@ class MyApp extends StatelessWidget {
             secureStorage: context.read<FlutterSecureStorage>(),
           ),
         ),
+        RepositoryProvider<LocationRepository>(
+          create: (context) => LocationRepository(
+            context.read<Dio>(),
+            context.read<FlutterSecureStorage>(),
+          ),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>(
             create: (context) => AuthBloc(
               authRepository: context.read<AuthRepository>(),
+            ),
+          ),
+          BlocProvider<LocationBloc>(
+            create: (context) => LocationBloc(
+              context.read<LocationRepository>(),
             ),
           ),
         ],
@@ -56,6 +70,7 @@ class MyApp extends StatelessWidget {
             '/register': (context) => const RegisterScreen(),
             '/admin-dashboard': (context) => const AdminDashboardScreen(),
             '/farmer-dashboard': (context) => const FarmerDashboardScreen(),
+            '/greenhouse-map': (context) => const GreenhouseMapScreen(),
           },
         ),
       ),

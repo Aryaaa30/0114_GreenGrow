@@ -24,6 +24,18 @@ class FarmerDashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Card(
+              child: ListTile(
+                leading: const Icon(Icons.map, size: 32),
+                title: const Text('Peta Greenhouse'),
+                subtitle: const Text('Lihat lokasi semua greenhouse'),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () {
+                  Navigator.pushNamed(context, '/greenhouse-map');
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
