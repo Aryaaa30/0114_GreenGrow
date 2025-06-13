@@ -29,15 +29,22 @@ class AuthRepositoryImpl implements AuthRepository {
           'remember_me': rememberMe,
         },
       );
-
-      final token = response.data['token'];
-      await _secureStorage.write(key: 'auth_token', value: token);
-
-      return {
-        'message': response.data['message'],
-        'token': token,
-        'user': UserModel.fromJson(response.data['user']),
-      };
+      final data = response.data;
+      if (data == null || data is! Map<String, dynamic>) {
+        throw Exception('Login gagal: response tidak valid dari server');
+      }
+      if (data['status'] == 'success') {
+        final innerData = data['data'];
+        final token = innerData['token'];
+        await _secureStorage.write(key: 'auth_token', value: token);
+        return {
+          'message': data['message'],
+          'token': token,
+          'user': UserModel.fromJson(innerData['user']),
+        };
+      } else {
+        throw Exception(data['message'] ?? 'Login gagal');
+      }
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -68,15 +75,19 @@ class AuthRepositoryImpl implements AuthRepository {
           'profile_photo': profilePhoto,
         },
       );
-
-      final token = response.data['token'];
-      await _secureStorage.write(key: 'auth_token', value: token);
-
-      return {
-        'message': response.data['message'],
-        'token': token,
-        'user': UserModel.fromJson(response.data['user']),
-      };
+      final data = response.data;
+      if (data == null || data is! Map<String, dynamic>) {
+        throw Exception('Register gagal: response tidak valid dari server');
+      }
+      if (data['status'] == 'success') {
+        // Tidak ada token di response register, hanya data user
+        return {
+          'message': data['message'],
+          'user': data['data'],
+        };
+      } else {
+        throw Exception(data['message'] ?? 'Register gagal');
+      }
     } on DioException catch (e) {
       throw _handleError(e);
     }

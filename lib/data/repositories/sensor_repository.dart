@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/sensor_data_model.dart';
 import '../local/sensor_local_db.dart';
 import '../local/sync_queue_db.dart';
+import '../../domain/models/sensor_trend.dart';
 
 class SensorRepository {
   final Dio dio;
@@ -16,7 +17,8 @@ class SensorRepository {
     return SensorDataModel.fromJson(response.data['data']);
   }
 
-  Future<List<SensorDataModel>> getSensorHistory({String? start, String? end, int? limit}) async {
+  Future<List<SensorDataModel>> getSensorHistory(
+      {String? start, String? end, int? limit}) async {
     final token = await storage?.read(key: 'auth_token');
     final queryParams = <String, dynamic>{};
     if (start != null) queryParams['start'] = start;
@@ -25,7 +27,9 @@ class SensorRepository {
     final response = await dio.get(
       '$_baseUrl/sensor/history',
       queryParameters: queryParams,
-      options: token != null ? Options(headers: {'Authorization': 'Bearer $token'}) : null,
+      options: token != null
+          ? Options(headers: {'Authorization': 'Bearer $token'})
+          : null,
     );
     return (response.data['data'] as List)
         .map((e) => SensorDataModel.fromJson(e))
@@ -76,4 +80,49 @@ class SensorRepository {
     }
     await SyncQueueDb.clearQueue();
   }
-} 
+
+  Future<List<SensorTrend>> fetchTrend({
+    required String type, // 'temperature' atau 'humidity'
+    String range = 'week',
+  }) async {
+    try {
+      final token = await storage?.read(key: 'auth_token');
+      final response = await dio.get(
+        '$_baseUrl/sensors/trends', // Diperbaiki dari /sensor/trends menjadi /sensors/trends
+        queryParameters: {
+          'type': type,
+          'range': range,
+        },
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      // Tambahkan logging untuk debug
+      print('Response trend data: ${response.data}');
+
+      if (response.data['status'] == 'success') {
+        final data = response.data['data'] as List;
+        return data.map((e) => SensorTrend.fromJson(e)).toList();
+      } else {
+        throw Exception('API error: ${response.data['message']}');
+      }
+    } catch (e) {
+      print('Error fetching trend data: $e');
+      rethrow;
+    }
+  }
+
+  // Helper untuk ambil dua tren sekaligus
+  Future<Map<String, List<SensorTrend>>> fetchTemperatureAndHumidityTrends(
+      {String range = 'week'}) async {
+    try {
+      final temp = await fetchTrend(type: 'temperature', range: range);
+      final hum = await fetchTrend(type: 'humidity', range: range);
+      return {'temperature': temp, 'humidity': hum};
+    } catch (e) {
+      print('Error in fetchTemperatureAndHumidityTrends: $e');
+      rethrow;
+    }
+  }
+}
