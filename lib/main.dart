@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:provider/provider.dart';
+import 'package:greengrow_app/core/providers/auth_provider.dart';
 import 'package:greengrow_app/data/repositories/auth_repository.dart';
 import 'package:greengrow_app/data/repositories/auth_repository_impl.dart';
 import 'package:greengrow_app/data/repositories/location_repository.dart';
@@ -12,9 +14,16 @@ import 'package:greengrow_app/presentation/pages/auth/register_screen.dart';
 import 'package:greengrow_app/presentation/pages/dashboard/admin_dashboard_screen.dart';
 import 'package:greengrow_app/presentation/pages/dashboard/farmer_dashboard_screen.dart';
 import 'package:greengrow_app/presentation/pages/map/greenhouse_map_screen.dart';
+import 'package:greengrow_app/presentation/pages/activity/activity_history_screen.dart';
+import 'package:greengrow_app/presentation/pages/activity/upload_activity_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AuthProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -71,6 +80,12 @@ class MyApp extends StatelessWidget {
             '/admin-dashboard': (context) => const AdminDashboardScreen(),
             '/farmer-dashboard': (context) => const FarmerDashboardScreen(),
             '/greenhouse-map': (context) => const GreenhouseMapScreen(),
+            '/activity-history': (context) => const ActivityHistoryScreen(
+                  greenhouseId: 1, // Ganti dengan ID greenhouse yang sesuai
+                ),
+            '/upload-activity': (context) => const UploadActivityScreen(
+                  greenhouseId: 1, // Ganti dengan ID greenhouse yang sesuai
+                ),
           },
         ),
       ),

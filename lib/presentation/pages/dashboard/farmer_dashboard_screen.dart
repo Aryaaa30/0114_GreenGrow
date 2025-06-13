@@ -2,21 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../widgets/sensor_monitoring_widget.dart';
 import '../../widgets/sensor_history_widget.dart';
 import '../../blocs/device_control/device_control_bloc.dart';
 import '../../blocs/device_control/device_control_event.dart';
 import '../../blocs/device_control/device_control_state.dart';
 import '../../../data/repositories/device_control_repository.dart';
+import '../activity/activity_history_screen.dart';
+import '../activity/upload_activity_screen.dart';
 
 class FarmerDashboardScreen extends StatelessWidget {
   const FarmerDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    // TODO: Get greenhouseId from user data or state management
+    const int greenhouseId = 1; // Temporary hardcoded value
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Farmer Dashboard'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              authProvider.logout();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -31,6 +48,44 @@ class FarmerDashboardScreen extends StatelessWidget {
                 trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () {
                   Navigator.pushNamed(context, '/greenhouse-map');
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.history, size: 32),
+                title: const Text('Riwayat Aktivitas'),
+                subtitle: const Text('Lihat riwayat perawatan tanaman'),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ActivityHistoryScreen(
+                        greenhouseId: greenhouseId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.add_photo_alternate, size: 32),
+                title: const Text('Upload Aktivitas'),
+                subtitle: const Text('Tambah bukti perawatan tanaman'),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => UploadActivityScreen(
+                        greenhouseId: greenhouseId,
+                      ),
+                    ),
+                  );
                 },
               ),
             ),
