@@ -92,7 +92,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: _obscurePassword,
                       validator: ValidationBuilder()
                           .required('Password is required')
-                          .minLength(8, 'Password must be at least 8 characters')
+                          .minLength(
+                              8, 'Password must be at least 8 characters')
                           .build(),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -132,9 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
                         return ElevatedButton(
-                          onPressed: state is AuthLoading
-                              ? null
-                              : _handleLogin,
+                          onPressed: state is AuthLoading ? null : _handleLogin,
                           child: state is AuthLoading
                               ? const CircularProgressIndicator()
                               : const Text('Login'),
@@ -163,4 +162,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-} 
+}
