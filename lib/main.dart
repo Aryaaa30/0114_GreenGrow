@@ -19,7 +19,8 @@ import 'package:greengrow_app/presentation/pages/map/greenhouse_map_screen.dart'
 import 'package:greengrow_app/presentation/pages/activity/activity_history_screen.dart';
 import 'package:greengrow_app/presentation/pages/activity/upload_activity_screen.dart';
 import 'package:greengrow_app/presentation/pages/notification/notification_screen.dart';
-import 'package:greengrow_app/welcome.dart'; // Import welcome page
+import 'package:greengrow_app/presentation/pages/advance/splash_screen.dart';
+import 'package:greengrow_app/presentation/pages/advance/welcome.dart';
 
 void main() {
   runApp(
@@ -95,9 +96,11 @@ class MyApp extends StatelessWidget {
             ),
             useMaterial3: true,
           ),
-          initialRoute: '/welcome', // Change initial route to welcome page
+          initialRoute: '/splash', // Change initial route to splash screen
           routes: {
-            '/welcome': (context) => const WelcomePage(), // Add welcome route
+            '/splash': (context) =>
+                const SplashScreen(), // Add splash screen route
+            '/welcome': (context) => const WelcomePage(),
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
             '/admin-dashboard': (context) => const AdminDashboardScreen(),
