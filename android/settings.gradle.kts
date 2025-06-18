@@ -14,12 +14,17 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+    plugins {
+        id("com.google.gms.google-services") version "4.4.2" apply false
+        id("org.jetbrains.kotlin.android") version "2.0.0" apply false // update ke versi Kotlin terbaru (2.0.0)
+        id("com.android.application") version "8.4.0" apply false // update jika perlu
+    }
 }
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "8.7.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.8.22" apply false
+    id("com.android.application") version "8.4.0" apply false // update jika perlu
+    id("org.jetbrains.kotlin.android") version "2.0.0" apply false // update ke versi Kotlin terbaru (2.0.0)
 }
 
 include(":app")

@@ -6,6 +6,8 @@ import 'package:greengrow_app/presentation/blocs/auth/auth_bloc.dart';
 import 'package:greengrow_app/presentation/blocs/auth/auth_event.dart';
 import 'package:greengrow_app/presentation/blocs/auth/auth_state.dart';
 import 'package:greengrow_app/presentation/widgets/custom_text_field.dart';
+import 'package:provider/provider.dart';
+import 'package:greengrow_app/core/providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -57,6 +59,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
           } else if (state is Authenticated) {
+            // Update FCM token ke backend setelah login
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
+            authProvider.updateFcmTokenToBackend();
             // Navigate to appropriate screen based on user role
             if (state.user.role == 'admin') {
               Navigator.pushReplacementNamed(context, '/admin-dashboard');

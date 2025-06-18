@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
+import '../services/notification_service.dart';
+import 'package:http/http.dart' as http;
 
 class AuthProvider with ChangeNotifier {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -45,4 +47,19 @@ class AuthProvider with ChangeNotifier {
     await _storage.deleteAll();
     notifyListeners();
   }
-} 
+
+  Future<void> updateFcmTokenToBackend() async {
+    if (_token == null) return;
+    final fcmToken = await NotificationService.getFcmToken();
+    if (fcmToken != null) {
+      await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/users/profile/fcm-token'),
+        headers: {
+          'Authorization': 'Bearer $_token',
+          'Content-Type': 'application/json',
+        },
+        body: '{"fcm_token": "$fcmToken"}',
+      );
+    }
+  }
+}

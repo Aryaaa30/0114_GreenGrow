@@ -21,8 +21,12 @@ import 'package:greengrow_app/presentation/pages/activity/upload_activity_screen
 import 'package:greengrow_app/presentation/pages/notification/notification_screen.dart';
 import 'package:greengrow_app/presentation/pages/advance/splash_screen.dart';
 import 'package:greengrow_app/presentation/pages/advance/welcome.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'core/services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(
     MultiProvider(
       providers: [
@@ -48,6 +52,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Inisialisasi notifikasi (FCM + local notification)
+    NotificationService.initialize(context);
+
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<Dio>(

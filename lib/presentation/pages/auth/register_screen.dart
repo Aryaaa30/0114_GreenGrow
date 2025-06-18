@@ -6,6 +6,8 @@ import 'package:greengrow_app/presentation/blocs/auth/auth_bloc.dart';
 import 'package:greengrow_app/presentation/blocs/auth/auth_event.dart';
 import 'package:greengrow_app/presentation/blocs/auth/auth_state.dart';
 import 'package:greengrow_app/presentation/widgets/custom_text_field.dart';
+import 'package:provider/provider.dart';
+import 'package:greengrow_app/core/providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -71,6 +73,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             );
           } else if (state is Authenticated) {
+            // Update FCM token ke backend setelah register
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
+            authProvider.updateFcmTokenToBackend();
             // Since we only register farmers, we always navigate to farmer dashboard
             Navigator.pushReplacementNamed(context, '/farmer-dashboard');
           }

@@ -80,10 +80,10 @@ class AuthRepositoryImpl implements AuthRepository {
         throw Exception('Register gagal: response tidak valid dari server');
       }
       if (data['status'] == 'success') {
-        // Tidak ada token di response register, hanya data user
+        // Perbaiki: pastikan return user adalah UserModel, bukan Map
         return {
           'message': data['message'],
-          'user': data['data'],
+          'user': UserModel.fromJson(data['data']),
         };
       } else {
         throw Exception(data['message'] ?? 'Register gagal');
@@ -167,4 +167,4 @@ class AuthRepositoryImpl implements AuthRepository {
     }
     return Exception('Network error occurred');
   }
-} 
+}
