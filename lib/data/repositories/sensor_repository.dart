@@ -125,4 +125,22 @@ class SensorRepository {
       rethrow;
     }
   }
+
+  // Mendapatkan semua data sensor dari endpoint GET /api/sensors/
+  Future<List<SensorDataModel>> getAllSensors() async {
+    final token = await storage?.read(key: 'auth_token');
+    final url = '$_baseUrl/sensors/';
+    print('Requesting: ' + url + ' with token: ' + (token ?? 'NO TOKEN'));
+    final response = await dio.get(
+      url,
+      options: token != null
+          ? Options(headers: {'Authorization': 'Bearer $token'})
+          : null,
+    );
+    print('Response status: ' + response.statusCode.toString());
+    print('Response data: ' + response.data.toString());
+    return (response.data['data'] as List)
+        .map((e) => SensorDataModel.fromJson(e))
+        .toList();
+  }
 }

@@ -27,25 +27,32 @@ class _SensorMonitoringWidgetState extends State<SensorMonitoringWidget> {
   @override
   void initState() {
     super.initState();
-    _sensorBloc = SensorBloc(SensorRepository(Dio(), const FlutterSecureStorage()));
+    _sensorBloc =
+        SensorBloc(SensorRepository(Dio(), const FlutterSecureStorage()));
     _fetchData();
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) => _fetchData());
-    _connectivitySub = Connectivity().onConnectivityChanged.listen((result) async {
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) => _fetchData());
+    _connectivitySub =
+        Connectivity().onConnectivityChanged.listen((result) async {
       final online = result != ConnectivityResult.none;
       if (mounted && online != _isOnline) {
         setState(() => _isOnline = online);
         if (online) {
           // Sync queue ke backend saat online
-          await SensorRepository(Dio(), const FlutterSecureStorage()).syncQueueToBackend();
+          await SensorRepository(Dio(), const FlutterSecureStorage())
+              .syncQueueToBackend();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Koneksi kembali online. Data lokal disinkronkan!')),
+              const SnackBar(
+                  content:
+                      Text('Koneksi kembali online. Data lokal disinkronkan!')),
             );
           }
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Koneksi internet terputus. Mode offline aktif!')),
+              const SnackBar(
+                  content:
+                      Text('Koneksi internet terputus. Mode offline aktif!')),
             );
           }
         }
@@ -54,7 +61,8 @@ class _SensorMonitoringWidgetState extends State<SensorMonitoringWidget> {
   }
 
   void _fetchData() {
-    _sensorBloc.add(FetchLatestSensorData());
+    // Ganti event ke FetchAllSensors agar ambil data dari endpoint /api/sensors/
+    _sensorBloc.add(FetchAllSensors());
   }
 
   @override
@@ -74,23 +82,32 @@ class _SensorMonitoringWidgetState extends State<SensorMonitoringWidget> {
         children: [
           Row(
             children: [
-              Icon(_isOnline ? Icons.wifi : Icons.wifi_off, color: _isOnline ? Colors.green : Colors.red),
+              Icon(_isOnline ? Icons.wifi : Icons.wifi_off,
+                  color: _isOnline ? Colors.green : Colors.red),
               const SizedBox(width: 8),
-              Text(_isOnline ? 'Online' : 'Offline', style: TextStyle(color: _isOnline ? Colors.green : Colors.red)),
+              Text(_isOnline ? 'Online' : 'Offline',
+                  style:
+                      TextStyle(color: _isOnline ? Colors.green : Colors.red)),
             ],
           ),
           BlocBuilder<SensorBloc, SensorState>(
             builder: (context, state) {
               if (state is SensorLoading || state is SensorInitial) {
                 return const Center(child: CircularProgressIndicator());
-              } else if (state is SensorLoaded) {
-                final data = state.data;
+              } else if (state is SensorHistoryLoaded) {
+                final data =
+                    state.history.isNotEmpty ? state.history.first : null;
+                if (data == null) return Text('Tidak ada data sensor');
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Suhu: ${data.temperature}°C', style: const TextStyle(fontSize: 18)),
-                    Text('Kelembapan: ${data.humidity}%', style: const TextStyle(fontSize: 18)),
-                    Text('Status: ${data.status}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('Suhu: ${data.temperature}°C',
+                        style: const TextStyle(fontSize: 18)),
+                    Text('Kelembapan: ${data.humidity}%',
+                        style: const TextStyle(fontSize: 18)),
+                    Text('Status: ${data.status}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
                     Text('Update: ${data.recordedAt.toLocal()}'),
                   ],
                 );
@@ -104,4 +121,4 @@ class _SensorMonitoringWidgetState extends State<SensorMonitoringWidget> {
       ),
     );
   }
-} 
+}

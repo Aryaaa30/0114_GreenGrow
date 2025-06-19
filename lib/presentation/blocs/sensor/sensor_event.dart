@@ -15,4 +15,6 @@ class FetchSensorHistory extends SensorEvent {
 
   @override
   List<Object?> get props => [start, end, limit];
-} 
+}
+
+class FetchAllSensors extends SensorEvent {}
