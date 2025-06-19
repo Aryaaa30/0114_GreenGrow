@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/notification_provider.dart';
 import '../../widgets/sensor_monitoring_widget.dart';
-import '../../widgets/sensor_history_widget.dart';
 import '../../widgets/notification_badge.dart';
 import '../../blocs/device_control/device_control_bloc.dart';
 import '../../blocs/device_control/device_control_event.dart';
@@ -16,6 +15,7 @@ import '../activity/activity_history_screen.dart';
 import '../activity/upload_activity_screen.dart';
 import '../sensor/sensor_trend_screen.dart';
 import '../notification/notification_screen.dart';
+import '../device/device_screen.dart';
 
 class FarmerDashboardScreen extends StatefulWidget {
   const FarmerDashboardScreen({super.key});
@@ -48,8 +48,13 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         // Home - already on dashboard, do nothing
         break;
       case 1:
-        // Device Control - navigate to device control page or show dialog
-        _showDeviceControlDialog();
+        // Device Control - navigate to device_screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const DeviceScreen(),
+          ),
+        );
         break;
       case 2:
         // History - navigate to activity history
@@ -78,117 +83,6 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         _showSettingsMenu();
         break;
     }
-  }
-
-  void _showDeviceControlDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Kontrol Perangkat'),
-          content: BlocProvider(
-            create: (context) => DeviceControlBloc(
-              DeviceControlRepository(Dio(), const FlutterSecureStorage()),
-            ),
-            child: BlocConsumer<DeviceControlBloc, DeviceControlState>(
-              listener: (context, state) {
-                if (state is DeviceControlSuccess) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Perintah berhasil dikirim!')),
-                  );
-                } else if (state is DeviceControlError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.message)),
-                  );
-                }
-              },
-              builder: (context, state) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        const Text('Blower'),
-                        const Spacer(),
-                        ElevatedButton(
-                          onPressed: state is DeviceControlLoading
-                              ? null
-                              : () {
-                                  context.read<DeviceControlBloc>().add(
-                                        DeviceControlRequested(
-                                          deviceType: 'blower',
-                                          action: 'ON',
-                                        ),
-                                      );
-                                },
-                          child: const Text('ON'),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: state is DeviceControlLoading
-                              ? null
-                              : () {
-                                  context.read<DeviceControlBloc>().add(
-                                        DeviceControlRequested(
-                                          deviceType: 'blower',
-                                          action: 'OFF',
-                                        ),
-                                      );
-                                },
-                          child: const Text('OFF'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Text('Sprayer'),
-                        const Spacer(),
-                        ElevatedButton(
-                          onPressed: state is DeviceControlLoading
-                              ? null
-                              : () {
-                                  context.read<DeviceControlBloc>().add(
-                                        DeviceControlRequested(
-                                          deviceType: 'sprayer',
-                                          action: 'ON',
-                                        ),
-                                      );
-                                },
-                          child: const Text('ON'),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: state is DeviceControlLoading
-                              ? null
-                              : () {
-                                  context.read<DeviceControlBloc>().add(
-                                        DeviceControlRequested(
-                                          deviceType: 'sprayer',
-                                          action: 'OFF',
-                                        ),
-                                      );
-                                },
-                          child: const Text('OFF'),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Tutup'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _showSettingsMenu() {
@@ -268,30 +162,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // HAPUS: Card Upload Aktivitas
-            // Card Peta Greenhouse
-            // HAPUS: Card Riwayat Aktivitas
-            // Card Upload Aktivitas
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.add_photo_alternate, size: 32),
-                title: const Text('Upload Aktivitas'),
-                subtitle: const Text('Tambah bukti perawatan tanaman'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => UploadActivityScreen(
-                        greenhouseId: greenhouseId,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
             const SizedBox(height: 16),
-            // HAPUS: Card Notifikasi
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -307,142 +178,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            BlocProvider(
-              create: (context) => DeviceControlBloc(
-                DeviceControlRepository(Dio(), const FlutterSecureStorage()),
-              ),
-              child: BlocConsumer<DeviceControlBloc, DeviceControlState>(
-                listener: (context, state) {
-                  if (state is DeviceControlSuccess) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Perintah berhasil dikirim!')),
-                    );
-                  } else if (state is DeviceControlError) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.message)),
-                    );
-                  }
-                },
-                builder: (context, state) {
-                  return Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Kontrol Perangkat',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              const Text('Blower'),
-                              const Spacer(),
-                              ElevatedButton(
-                                onPressed: state is DeviceControlLoading
-                                    ? null
-                                    : () {
-                                        context.read<DeviceControlBloc>().add(
-                                              DeviceControlRequested(
-                                                deviceType: 'blower',
-                                                action: 'ON',
-                                              ),
-                                            );
-                                      },
-                                child: const Text('ON'),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: state is DeviceControlLoading
-                                    ? null
-                                    : () {
-                                        context.read<DeviceControlBloc>().add(
-                                              DeviceControlRequested(
-                                                deviceType: 'blower',
-                                                action: 'OFF',
-                                              ),
-                                            );
-                                      },
-                                child: const Text('OFF'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              const Text('Sprayer'),
-                              const Spacer(),
-                              ElevatedButton(
-                                onPressed: state is DeviceControlLoading
-                                    ? null
-                                    : () {
-                                        context.read<DeviceControlBloc>().add(
-                                              DeviceControlRequested(
-                                                deviceType: 'sprayer',
-                                                action: 'ON',
-                                              ),
-                                            );
-                                      },
-                                child: const Text('ON'),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: state is DeviceControlLoading
-                                    ? null
-                                    : () {
-                                        context.read<DeviceControlBloc>().add(
-                                              DeviceControlRequested(
-                                                deviceType: 'sprayer',
-                                                action: 'OFF',
-                                              ),
-                                            );
-                                      },
-                                child: const Text('OFF'),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
             const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text('Status Perangkat',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(height: 12),
-                    Text('Blower: OFF'),
-                    Text('Sprayer: ON'),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 350,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Riwayat Data Sensor',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(height: 12),
-                      Expanded(child: SensorHistoryWidget()),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
             const Text(
               'Status Sensor',
               style: TextStyle(
@@ -558,34 +294,6 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
             label: 'Settings',
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _DashboardCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  const _DashboardCard(
-      {required this.icon, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: InkWell(
-        onTap: onTap,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 48),
-              const SizedBox(height: 12),
-              Text(label, style: const TextStyle(fontSize: 16)),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:greengrow_app/presentation/widgets/sensor_history_widget.dart';
 import 'package:provider/provider.dart';
 import '../../../core/config/api_config.dart';
 import '../../../domain/repositories/activity_repository.dart';
@@ -191,86 +192,21 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
         children: [
           Expanded(child: activityListWidget),
           const Divider(height: 32),
-          const Text(
-            'Status Sensor',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Suhu',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.thermostat, color: Colors.red),
-                      const SizedBox(width: 8),
-                      const Text('28°C'),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SensorTrendScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text('Lihat Grafik'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Kelembapan',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.water_drop, color: Colors.blue),
-                      const SizedBox(width: 8),
-                      const Text('65%'),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SensorTrendScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text('Lihat Grafik'),
-                      ),
-                    ],
-                  ),
-                ],
+          // Card Riwayat Data Sensor dari dashboard petani
+          SizedBox(
+            height: 350,
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('Riwayat Data Sensor',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 12),
+                    Expanded(child: SensorHistoryWidget()),
+                  ],
+                ),
               ),
             ),
           ),
