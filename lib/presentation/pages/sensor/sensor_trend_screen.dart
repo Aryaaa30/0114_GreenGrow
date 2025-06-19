@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../data/repositories/sensor_repository.dart';
-import '../widgets/sensor_trend_chart.dart';
-import '../../domain/models/sensor_trend.dart';
+import '../../../data/repositories/sensor_repository.dart';
+import '../../widgets/sensor_trend_chart.dart';
+import '../../../domain/models/sensor_trend.dart';
 
 class SensorTrendScreen extends StatefulWidget {
   const SensorTrendScreen({super.key});

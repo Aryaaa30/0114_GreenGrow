@@ -14,7 +14,7 @@ import '../../blocs/device_control/device_control_state.dart';
 import '../../../data/repositories/device_control_repository.dart';
 import '../activity/activity_history_screen.dart';
 import '../activity/upload_activity_screen.dart';
-import '../sensor_trend_screen.dart';
+import '../sensor/sensor_trend_screen.dart';
 import '../notification/notification_screen.dart';
 
 class FarmerDashboardScreen extends StatefulWidget {
