@@ -25,6 +25,8 @@ class FarmerDashboardScreen extends StatefulWidget {
 }
 
 class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
+  int _selectedIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -35,14 +37,221 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     });
   }
 
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    // Handle navigation based on selected index
+    switch (index) {
+      case 0:
+        // Home - already on dashboard, do nothing
+        break;
+      case 1:
+        // Device Control - navigate to device control page or show dialog
+        _showDeviceControlDialog();
+        break;
+      case 2:
+        // History - navigate to activity history
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ActivityHistoryScreen(
+              greenhouseId: 1, // Using the same hardcoded value
+            ),
+          ),
+        );
+        break;
+      case 3:
+        // Aktivitas - navigate to upload activity screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UploadActivityScreen(
+              greenhouseId: 1, // Using the same hardcoded value
+            ),
+          ),
+        );
+        break;
+      case 4:
+        // Settings - navigate to settings or show menu
+        _showSettingsMenu();
+        break;
+    }
+  }
+
+  void _showDeviceControlDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Kontrol Perangkat'),
+          content: BlocProvider(
+            create: (context) => DeviceControlBloc(
+              DeviceControlRepository(Dio(), const FlutterSecureStorage()),
+            ),
+            child: BlocConsumer<DeviceControlBloc, DeviceControlState>(
+              listener: (context, state) {
+                if (state is DeviceControlSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Perintah berhasil dikirim!')),
+                  );
+                } else if (state is DeviceControlError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.message)),
+                  );
+                }
+              },
+              builder: (context, state) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('Blower'),
+                        const Spacer(),
+                        ElevatedButton(
+                          onPressed: state is DeviceControlLoading
+                              ? null
+                              : () {
+                                  context.read<DeviceControlBloc>().add(
+                                        DeviceControlRequested(
+                                          deviceType: 'blower',
+                                          action: 'ON',
+                                        ),
+                                      );
+                                },
+                          child: const Text('ON'),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: state is DeviceControlLoading
+                              ? null
+                              : () {
+                                  context.read<DeviceControlBloc>().add(
+                                        DeviceControlRequested(
+                                          deviceType: 'blower',
+                                          action: 'OFF',
+                                        ),
+                                      );
+                                },
+                          child: const Text('OFF'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Text('Sprayer'),
+                        const Spacer(),
+                        ElevatedButton(
+                          onPressed: state is DeviceControlLoading
+                              ? null
+                              : () {
+                                  context.read<DeviceControlBloc>().add(
+                                        DeviceControlRequested(
+                                          deviceType: 'sprayer',
+                                          action: 'ON',
+                                        ),
+                                      );
+                                },
+                          child: const Text('ON'),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: state is DeviceControlLoading
+                              ? null
+                              : () {
+                                  context.read<DeviceControlBloc>().add(
+                                        DeviceControlRequested(
+                                          deviceType: 'sprayer',
+                                          action: 'OFF',
+                                        ),
+                                      );
+                                },
+                          child: const Text('OFF'),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Tutup'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSettingsMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        final authProvider = Provider.of<AuthProvider>(context);
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Profil'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Navigate to profile screen
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: const Text('Pengaturan'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Navigate to settings screen
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.help),
+                title: const Text('Bantuan'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Navigate to help screen
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title:
+                    const Text('Keluar', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  authProvider.logout();
+                  Navigator.pushReplacementNamed(context, '/login');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     // TODO: Get greenhouseId from user data or state management
     const int greenhouseId = 1; // Temporary hardcoded value
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Farmer Dashboard'),
+        title: const Text('Dashboard Petani'),
         actions: [
           const NotificationBadge(),
           IconButton(
@@ -59,37 +268,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.map, size: 32),
-                title: const Text('Peta Greenhouse'),
-                subtitle: const Text('Lihat lokasi semua greenhouse'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  Navigator.pushNamed(context, '/greenhouse-map');
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.history, size: 32),
-                title: const Text('Riwayat Aktivitas'),
-                subtitle: const Text('Lihat riwayat perawatan tanaman'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ActivityHistoryScreen(
-                        greenhouseId: greenhouseId,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
+            // HAPUS: Card Upload Aktivitas
+            // Card Peta Greenhouse
+            // HAPUS: Card Riwayat Aktivitas
+            // Card Upload Aktivitas
             Card(
               child: ListTile(
                 leading: const Icon(Icons.add_photo_alternate, size: 32),
@@ -109,36 +291,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.notifications, size: 32),
-                title: const Text('Notifikasi'),
-                subtitle: const Text('Lihat notifikasi suhu dan kelembapan'),
-                trailing: Consumer<NotificationProvider>(
-                  builder: (context, provider, child) {
-                    return provider.unreadCount > 0
-                        ? Badge(
-                            label: Text('${provider.unreadCount}'),
-                            child: const Icon(Icons.arrow_forward_ios),
-                          )
-                        : const Icon(Icons.arrow_forward_ios);
-                  },
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationScreen(),
-                    ),
-                  ).then((_) {
-                    // Refresh unread count when returning from notification screen
-                    Provider.of<NotificationProvider>(context, listen: false)
-                        .loadUnreadCount();
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
+            // HAPUS: Card Notifikasi
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -373,8 +526,38 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 80), // Extra space for bottom navigation
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.developer_board),
+            label: 'Control',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'History',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_photo_alternate),
+            label: 'Aktivitas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
       ),
     );
   }
