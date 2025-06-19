@@ -190,30 +190,34 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(child: activityListWidget),
-          const Divider(height: 32),
-          // Card Riwayat Data Sensor dari dashboard petani
-          SizedBox(
-            height: 350,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text('Riwayat Data Sensor',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(height: 12),
-                    Expanded(child: SensorHistoryWidget()),
-                  ],
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 500, // Atur tinggi agar ListView bisa tampil
+              child: activityListWidget,
+            ),
+            const Divider(height: 32),
+            SizedBox(
+              height: 350,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text('Riwayat Data Sensor',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 12),
+                      Expanded(child: SensorHistoryWidget()),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,

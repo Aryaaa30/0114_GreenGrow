@@ -272,9 +272,8 @@ class _UploadActivityScreenState extends State<UploadActivityScreen> {
         title: const Text('Upload Aktivitas'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
