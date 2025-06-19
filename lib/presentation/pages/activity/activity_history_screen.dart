@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:greengrow_app/presentation/pages/activity/upload_activity_screen.dart';
+import 'package:greengrow_app/presentation/pages/dashboard/farmer_dashboard_screen.dart';
+import 'package:greengrow_app/presentation/pages/device/device_screen.dart';
 import 'package:greengrow_app/presentation/widgets/sensor_history_widget.dart';
 import 'package:provider/provider.dart';
 import '../../../core/config/api_config.dart';
@@ -209,6 +212,73 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: 0, // Ganti sesuai kebutuhan jika ingin highlight tab
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FarmerDashboardScreen(),
+                ),
+              );
+              break;
+            case 1:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DeviceScreen(),
+                ),
+              );
+              break;
+            case 2:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ActivityHistoryScreen(greenhouseId: 1),
+                ),
+              );
+              break;
+            case 3:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UploadActivityScreen(greenhouseId: 1),
+                ),
+              );
+              break;
+            case 4:
+              // Settings, bisa tampilkan modal atau halaman settings
+              break;
+          }
+        },
+        selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.developer_board),
+            label: 'Control',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'History',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_photo_alternate),
+            label: 'Aktivitas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),

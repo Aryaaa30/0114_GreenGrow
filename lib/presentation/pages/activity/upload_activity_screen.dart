@@ -9,6 +9,9 @@ import '../../../domain/models/activity_log.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../dashboard/farmer_dashboard_screen.dart';
+import '../device/device_screen.dart';
+import 'activity_history_screen.dart';
 
 class UploadActivityScreen extends StatefulWidget {
   final int greenhouseId;
@@ -108,9 +111,6 @@ class _UploadActivityScreenState extends State<UploadActivityScreen> {
   }
 
   Future<void> _getImage(ImageSource source) async {
-    final hasPermission = await _checkAndRequestPermissions();
-    if (!hasPermission) return;
-
     try {
       final image = await ImagePicker().pickImage(
         source: source,
@@ -123,7 +123,8 @@ class _UploadActivityScreenState extends State<UploadActivityScreen> {
         // Validasi ukuran file
         final file = File(image.path);
         final fileSize = await file.length();
-        if (fileSize > 5 * 1024 * 1024) { // 5MB
+        if (fileSize > 5 * 1024 * 1024) {
+          // 5MB
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -403,6 +404,69 @@ class _UploadActivityScreenState extends State<UploadActivityScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: 3, // Index untuk tab Aktivitas
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FarmerDashboardScreen(),
+                ),
+              );
+              break;
+            case 1:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DeviceScreen(),
+                ),
+              );
+              break;
+            case 2:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ActivityHistoryScreen(greenhouseId: widget.greenhouseId),
+                ),
+              );
+              break;
+            case 3:
+              // Sudah di halaman ini
+              break;
+            case 4:
+              // Settings, bisa tampilkan modal atau halaman settings
+              break;
+          }
+        },
+        selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.developer_board),
+            label: 'Control',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'History',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_photo_alternate),
+            label: 'Aktivitas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+      ),
     );
   }
 
@@ -411,4 +475,4 @@ class _UploadActivityScreenState extends State<UploadActivityScreen> {
     _descriptionController.dispose();
     super.dispose();
   }
-} 
+}
