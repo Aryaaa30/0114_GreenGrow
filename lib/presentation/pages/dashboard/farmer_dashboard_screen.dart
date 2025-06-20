@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
@@ -26,6 +28,15 @@ class FarmerDashboardScreen extends StatefulWidget {
 
 class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
   int _selectedIndex = 0;
+  bool isLoading = true;
+  bool isAutomationOn = false;
+  String blowerStatus = 'OFF';
+  String sprayerStatus = 'OFF';
+  double temperature = 0.0;
+  double humidity = 0.0;
+  String sensorStatus = '-';
+  // Ganti dengan alamat backend kamu
+  final String baseUrl = 'http://10.0.2.2:3000';
 
   @override
   void initState() {
@@ -35,6 +46,74 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
       Provider.of<NotificationProvider>(context, listen: false)
           .loadUnreadCount();
     });
+    fetchAutomationStatus();
+    fetchLatestSensorData();
+  }
+
+  Future<void> fetchAutomationStatus() async {
+    final response = await http.get(Uri.parse('$baseUrl/api/automation'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        isAutomationOn = data['automation_status'] == 'ON' ||
+            data['is_automation_enabled'] == true;
+        blowerStatus = data['blower_status'] ?? 'OFF';
+        sprayerStatus = data['sprayer_status'] ?? 'OFF';
+      });
+    }
+  }
+
+  Future<void> fetchLatestSensorData() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/api/sensors/latest'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          temperature = data['temperature']?.toDouble() ?? 0.0;
+          humidity = data['humidity']?.toDouble() ?? 0.0;
+          sensorStatus = data['status'] ?? '-';
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+          sensorStatus = 'Gagal mengambil data sensor (${response.statusCode})';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        sensorStatus = 'Gagal mengambil data sensor (error: $e)';
+      });
+    }
+  }
+
+  Future<void> setAutomationMode(bool value) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/automation/mode'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'is_automation_enabled': value}),
+    );
+    if (response.statusCode == 200) {
+      setState(() {
+        isAutomationOn = value;
+      });
+      fetchAutomationStatus();
+    }
+  }
+
+  Future<void> setDeviceStatus({String? blower, String? sprayer}) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/automation/device'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        if (blower != null) 'blower_status': blower,
+        if (sprayer != null) 'sprayer_status': sprayer,
+      }),
+    );
+    if (response.statusCode == 200) {
+      fetchAutomationStatus();
+    }
   }
 
   void _onItemTapped(int index) {
@@ -140,9 +219,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    // TODO: Get greenhouseId from user data or state management
-    const int greenhouseId = 1; // Temporary hardcoded value
-
+    const int greenhouseId = 1;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard Petani'),
@@ -157,115 +234,84 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: () async {
+                await fetchAutomationStatus();
+                await fetchLatestSensorData();
+              },
+              child: ListView(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text('Monitoring Suhu & Kelembapan',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(height: 12),
-                    SensorMonitoringWidget(),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const SizedBox(height: 16),
-            const Text(
-              'Status Sensor',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Suhu',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                children: [
+                  // Automation Switch
+                  Card(
+                    child: ListTile(
+                      title: const Text('Automation'),
+                      subtitle: Text(
+                          isAutomationOn ? 'ON (Otomatis)' : 'OFF (Manual)'),
+                      trailing: Switch(
+                        value: isAutomationOn,
+                        onChanged: (value) => setAutomationMode(value),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
+                  ),
+                  const SizedBox(height: 16),
+                  // Sensor Data
+                  Card(
+                    child: ListTile(
+                      title: const Text('Suhu & Kelembapan'),
+                      subtitle: Text(
+                          'Suhu: ${temperature.toStringAsFixed(1)}°C\nKelembapan: ${humidity.toStringAsFixed(1)}%'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Status Sensor
+                  Card(
+                    child: ListTile(
+                      title: const Text('Status Kondisi'),
+                      subtitle: Text(sensorStatus),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Device Status & Manual Control
+                  Card(
+                    child: Column(
                       children: [
-                        const Icon(Icons.thermostat, color: Colors.red),
-                        const SizedBox(width: 8),
-                        const Text('28°C'),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const SensorTrendScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text('Lihat Grafik'),
+                        ListTile(
+                          title: const Text('Blower'),
+                          subtitle: Text('Status: $blowerStatus'),
+                          trailing: ElevatedButton(
+                            onPressed: isAutomationOn
+                                ? null
+                                : () => setDeviceStatus(
+                                    blower:
+                                        blowerStatus == 'ON' ? 'OFF' : 'ON'),
+                            child: Text(
+                                blowerStatus == 'ON' ? 'Matikan' : 'Nyalakan'),
+                          ),
+                        ),
+                        ListTile(
+                          title: const Text('Sprayer'),
+                          subtitle: Text('Status: $sprayerStatus'),
+                          trailing: ElevatedButton(
+                            onPressed: isAutomationOn
+                                ? null
+                                : () => setDeviceStatus(
+                                    sprayer:
+                                        sprayerStatus == 'ON' ? 'OFF' : 'ON'),
+                            child: Text(
+                                sprayerStatus == 'ON' ? 'Matikan' : 'Nyalakan'),
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  // ...widget lain seperti histori, grafik, dsb sesuai kebutuhan...
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Kelembapan',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.water_drop, color: Colors.blue),
-                        const SizedBox(width: 8),
-                        const Text('65%'),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const SensorTrendScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text('Lihat Grafik'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 80), // Extra space for bottom navigation
-          ],
-        ),
-      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,

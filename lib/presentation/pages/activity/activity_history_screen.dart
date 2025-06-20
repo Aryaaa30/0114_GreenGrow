@@ -44,9 +44,17 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
       });
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      if (token == null) {
+        setState(() {
+          _error = 'Token tidak ditemukan. Silakan login ulang.';
+          _isLoading = false;
+        });
+        return;
+      }
       final activities = await _repository.getActivityLogsByGreenhouse(
         widget.greenhouseId,
-        authProvider.token!,
+        token,
       );
 
       setState(() {
@@ -91,7 +99,7 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Error: [31m[1m[4m[0m[0m$_error',
+              'Error: $_error',
               style: const TextStyle(color: Colors.red),
             ),
             const SizedBox(height: 16),
