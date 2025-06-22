@@ -1,23 +1,13 @@
 import 'dart:convert';
+import 'package:greengrow_app/presentation/pages/activity/activity_history_screen.dart';
+import 'package:greengrow_app/presentation/pages/activity/upload_activity_screen.dart';
+import 'package:greengrow_app/presentation/pages/device/device_screen.dart';
+import 'package:greengrow_app/presentation/widgets/notification_badge.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/notification_provider.dart';
-import '../../widgets/sensor_monitoring_widget.dart';
-import '../../widgets/notification_badge.dart';
-import '../../blocs/device_control/device_control_bloc.dart';
-import '../../blocs/device_control/device_control_event.dart';
-import '../../blocs/device_control/device_control_state.dart';
-import '../../../data/repositories/device_control_repository.dart';
-import '../activity/activity_history_screen.dart';
-import '../activity/upload_activity_screen.dart';
-import '../sensor/sensor_trend_screen.dart';
-import '../notification/notification_screen.dart';
-import '../device/device_screen.dart';
 
 class FarmerDashboardScreen extends StatefulWidget {
   const FarmerDashboardScreen({super.key});
@@ -30,6 +20,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
   int _selectedIndex = 0;
   bool isLoading = true;
   bool isAutomationOn = false;
+  bool isAutomationLoading = false;
   String blowerStatus = 'OFF';
   String sprayerStatus = 'OFF';
   double temperature = 0.0;
@@ -51,21 +42,36 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
   }
 
   Future<void> fetchAutomationStatus() async {
-    final response = await http.get(Uri.parse('$baseUrl/api/automation'));
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/sensors/automation/status'),
+      headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+    );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
-        isAutomationOn = data['automation_status'] == 'ON' ||
-            data['is_automation_enabled'] == true;
+        isAutomationOn = data['is_automation_enabled'] == true;
         blowerStatus = data['blower_status'] ?? 'OFF';
         sprayerStatus = data['sprayer_status'] ?? 'OFF';
+      });
+    } else {
+      setState(() {
+        isAutomationOn = false;
+        blowerStatus = 'OFF';
+        sprayerStatus = 'OFF';
       });
     }
   }
 
   Future<void> fetchLatestSensorData() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/sensors/latest'));
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/sensors/latest'),
+        headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+      );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
@@ -89,16 +95,73 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
   }
 
   Future<void> setAutomationMode(bool value) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/api/automation/mode'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'is_automation_enabled': value}),
-    );
-    if (response.statusCode == 200) {
+    setState(() {
+      isAutomationLoading = true;
+    });
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/sensors/automation/mode'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'is_automation_enabled': value}),
+      );
+      print(
+          'Automation PUT response: status=${response.statusCode}, body=${response.body}');
+      if (response.statusCode == 200) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        await fetchAutomationStatus();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              value
+                  ? 'Automation berhasil diaktifkan.'
+                  : 'Automation berhasil dinonaktifkan.',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else if (response.statusCode == 401) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Sesi login Anda sudah habis atau tidak valid. Silakan login ulang.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        // Optional: redirect ke login
+        // Navigator.pushReplacementNamed(context, '/login');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Gagal mengubah mode automation (Status: ${response.statusCode})\nBody: ${response.body}',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi error: $e',
+              style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
       setState(() {
-        isAutomationOn = value;
+        isAutomationLoading = false;
       });
-      fetchAutomationStatus();
     }
   }
 
@@ -219,7 +282,6 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    const int greenhouseId = 1;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard Petani'),
@@ -250,10 +312,29 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                       title: const Text('Automation'),
                       subtitle: Text(
                           isAutomationOn ? 'ON (Otomatis)' : 'OFF (Manual)'),
-                      trailing: Switch(
-                        value: isAutomationOn,
-                        onChanged: (value) => setAutomationMode(value),
-                      ),
+                      trailing: isAutomationLoading
+                          ? SizedBox(
+                              width: 48,
+                              height: 24,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                            )
+                          : Switch(
+                              value: isAutomationOn,
+                              onChanged: isAutomationLoading
+                                  ? null
+                                  : (value) => setAutomationMode(value),
+                              activeColor: Colors.white,
+                              activeTrackColor: Colors.green,
+                              inactiveThumbColor: Colors.grey,
+                              inactiveTrackColor: Colors.grey.shade300,
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -271,40 +352,6 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                     child: ListTile(
                       title: const Text('Status Kondisi'),
                       subtitle: Text(sensorStatus),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Device Status & Manual Control
-                  Card(
-                    child: Column(
-                      children: [
-                        ListTile(
-                          title: const Text('Blower'),
-                          subtitle: Text('Status: $blowerStatus'),
-                          trailing: ElevatedButton(
-                            onPressed: isAutomationOn
-                                ? null
-                                : () => setDeviceStatus(
-                                    blower:
-                                        blowerStatus == 'ON' ? 'OFF' : 'ON'),
-                            child: Text(
-                                blowerStatus == 'ON' ? 'Matikan' : 'Nyalakan'),
-                          ),
-                        ),
-                        ListTile(
-                          title: const Text('Sprayer'),
-                          subtitle: Text('Status: $sprayerStatus'),
-                          trailing: ElevatedButton(
-                            onPressed: isAutomationOn
-                                ? null
-                                : () => setDeviceStatus(
-                                    sprayer:
-                                        sprayerStatus == 'ON' ? 'OFF' : 'ON'),
-                            child: Text(
-                                sprayerStatus == 'ON' ? 'Matikan' : 'Nyalakan'),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                   const SizedBox(height: 16),

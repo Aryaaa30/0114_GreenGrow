@@ -13,4 +13,6 @@ class DeviceControlRequested extends DeviceControlEvent {
 
   @override
   List<Object?> get props => [deviceType, action];
-} 
+}
+
+class DeviceControlFetchStatus extends DeviceControlEvent {}
