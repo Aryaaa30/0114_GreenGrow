@@ -50,10 +50,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      // Perbaiki parsing sesuai struktur respons backend
+      final automationData = data['data'] ?? data;
       setState(() {
-        isAutomationOn = data['is_automation_enabled'] == true;
-        blowerStatus = data['blower_status'] ?? 'OFF';
-        sprayerStatus = data['sprayer_status'] ?? 'OFF';
+        isAutomationOn = automationData['is_automation_enabled'] == true;
+        blowerStatus = automationData['blower_status'] ?? 'OFF';
+        sprayerStatus = automationData['sprayer_status'] ?? 'OFF';
       });
     } else {
       setState(() {
@@ -97,6 +99,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
   Future<void> setAutomationMode(bool value) async {
     setState(() {
       isAutomationLoading = true;
+      isAutomationOn = value; // Update state lokal agar UI langsung berubah
     });
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -148,6 +151,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
             duration: const Duration(seconds: 3),
           ),
         );
+        // Jika gagal, kembalikan ke state sebelumnya
+        setState(() {
+          isAutomationOn = !value;
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -158,6 +165,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
           duration: const Duration(seconds: 3),
         ),
       );
+      // Jika error, kembalikan ke state sebelumnya
+      setState(() {
+        isAutomationOn = !value;
+      });
     } finally {
       setState(() {
         isAutomationLoading = false;
