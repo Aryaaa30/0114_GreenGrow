@@ -14,11 +14,12 @@ class AuthLoading extends AuthState {}
 
 class Authenticated extends AuthState {
   final UserModel user;
+  final String token;
 
-  const Authenticated(this.user);
+  const Authenticated(this.user, this.token);
 
   @override
-  List<Object?> get props => [user];
+  List<Object?> get props => [user, token];
 }
 
 class Unauthenticated extends AuthState {}
@@ -30,4 +31,4 @@ class AuthError extends AuthState {
 
   @override
   List<Object?> get props => [message];
-} 
+}

@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocListener<AuthBloc, AuthState>(
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -59,11 +59,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
           } else if (state is Authenticated) {
-            // Update FCM token ke backend setelah login
             final authProvider =
                 Provider.of<AuthProvider>(context, listen: false);
+            await authProvider.setToken(state.token);
             authProvider.updateFcmTokenToBackend();
-            // Navigate to appropriate screen based on user role
             if (state.user.role == 'admin') {
               Navigator.pushReplacementNamed(context, '/admin-dashboard');
             } else {

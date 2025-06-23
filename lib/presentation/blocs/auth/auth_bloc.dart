@@ -27,7 +27,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
         rememberMe: event.rememberMe,
       );
-      emit(Authenticated(response['user']));
+      emit(Authenticated(response['user'], response['token']));
     } catch (e) {
       emit(AuthError(e.toString()));
     }
@@ -49,7 +49,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         roleId: event.roleId,
         profilePhoto: event.profilePhoto,
       );
-      emit(Authenticated(response['user']));
+      emit(Authenticated(response['user'], response['token']));
     } catch (e) {
       emit(AuthError(e.toString()));
     }
@@ -65,7 +65,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         provider: event.provider,
         token: event.token,
       );
-      emit(Authenticated(response['user']));
+      emit(Authenticated(response['user'], response['token']));
     } catch (e) {
       emit(AuthError(e.toString()));
     }
@@ -97,4 +97,4 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthError(e.toString()));
     }
   }
-} 
+}
