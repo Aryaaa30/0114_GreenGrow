@@ -16,6 +16,7 @@ import '../../blocs/sensor/sensor_bloc.dart';
 import '../../blocs/sensor/sensor_event.dart';
 import '../../blocs/sensor/sensor_state.dart';
 import 'package:dio/dio.dart';
+import '../settings/settings_screen.dart';
 
 class ActivityHistoryScreen extends StatefulWidget {
   final int greenhouseId;
@@ -308,7 +309,12 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
               );
               break;
             case 4:
-              // Settings, bisa tampilkan modal atau halaman settings
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SettingsScreen(),
+                ),
+              );
               break;
           }
         },

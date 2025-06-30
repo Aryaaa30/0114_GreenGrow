@@ -6,6 +6,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../widgets/sensor_monitoring_widget.dart';
 import '../../widgets/sensor_history_widget.dart';
 import '../device/device_screen.dart';
+import '../settings/settings_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -201,7 +202,12 @@ class AdminDashboardScreen extends StatelessWidget {
               );
               break;
             case 4:
-              // Settings, bisa tampilkan modal atau halaman settings
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SettingsScreen(),
+                ),
+              );
               break;
           }
         },

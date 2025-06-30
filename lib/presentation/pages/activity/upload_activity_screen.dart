@@ -12,6 +12,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../dashboard/farmer_dashboard_screen.dart';
 import '../device/device_screen.dart';
 import 'activity_history_screen.dart';
+import '../settings/settings_screen.dart';
 
 class UploadActivityScreen extends StatefulWidget {
   final int greenhouseId;
@@ -423,7 +424,12 @@ class _UploadActivityScreenState extends State<UploadActivityScreen> {
               // Sudah di halaman ini
               break;
             case 4:
-              // Settings, bisa tampilkan modal atau halaman settings
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SettingsScreen(),
+                ),
+              );
               break;
           }
         },

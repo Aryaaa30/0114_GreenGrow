@@ -10,6 +10,7 @@ import '../../blocs/device_control/device_control_bloc.dart';
 import '../../blocs/device_control/device_control_event.dart';
 import '../../blocs/device_control/device_control_state.dart';
 import '../../../data/repositories/device_control_repository.dart';
+import '../settings/settings_screen.dart';
 
 class DeviceScreen extends StatelessWidget {
   const DeviceScreen({super.key});
@@ -221,7 +222,12 @@ class DeviceScreen extends StatelessWidget {
                     );
                     break;
                   case 4:
-                    // Settings, bisa tampilkan modal atau halaman settings
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SettingsScreen(),
+                      ),
+                    );
                     break;
                 }
               },
