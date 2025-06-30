@@ -18,22 +18,125 @@ class SensorRepository {
   }
 
   Future<List<SensorDataModel>> getSensorHistory(
-      {String? start, String? end, int? limit}) async {
+      {String? start, String? end, int? limit, String? groupBy}) async {
     final token = await storage?.read(key: 'auth_token');
     final queryParams = <String, dynamic>{};
-    if (start != null) queryParams['start'] = start;
-    if (end != null) queryParams['end'] = end;
-    if (limit != null) queryParams['limit'] = limit;
-    final response = await dio.get(
-      '$_baseUrl/sensor/history',
-      queryParameters: queryParams,
-      options: token != null
-          ? Options(headers: {'Authorization': 'Bearer $token'})
-          : null,
-    );
-    return (response.data['data'] as List)
-        .map((e) => SensorDataModel.fromJson(e))
-        .toList();
+    if (start != null) queryParams['start_date'] = start;
+    if (end != null) queryParams['end_date'] = end;
+    if (limit != null) queryParams['limit'] = limit.toString();
+    if (groupBy != null) queryParams['group_by'] = groupBy;
+
+    try {
+      print('Fetching sensor history with params: $queryParams');
+      print('API URL: $_baseUrl/sensor');
+      print('Token: $token');
+
+      final response = await dio.get(
+        '$_baseUrl/sensor',
+        queryParameters: queryParams,
+        options: token != null
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response data: ${response.data}');
+
+      if (response.data['status'] == 'success') {
+        final List<dynamic> data = response.data['data'] as List;
+        print('Data length: ${data.length}');
+
+        if (data.isEmpty) {
+          print('No data returned from API');
+          return [];
+        }
+
+        // Handle different response formats based on groupBy
+        if (groupBy != null) {
+          // For aggregated data
+          return data.map((item) {
+            try {
+              // Create a SensorDataModel from aggregated data
+              // The keys might be different based on the groupBy parameter
+              Map<String, dynamic> sensorData = {
+                'id': 0, // Use a placeholder ID
+                'temperature':
+                    double.parse((item['avg_temperature'] ?? 0.0).toString()),
+                'humidity':
+                    double.parse((item['avg_humidity'] ?? 0.0).toString()),
+                'status': 'Aggregated', // Use a placeholder status
+              };
+
+              // Handle different date formats based on groupBy
+              DateTime recordedAt;
+              switch (groupBy) {
+                case 'hour':
+                  recordedAt = DateTime.parse(
+                      '${item['date']} ${item['hour'].toString().padLeft(2, '0')}:00:00');
+                  break;
+                case 'day':
+                  recordedAt = DateTime.parse('${item['date']} 00:00:00');
+                  break;
+                case 'week':
+                  // For week, we use year and week number
+                  // This is an approximation as exact date calculation from week number is complex
+                  recordedAt = DateTime(item['year'], 1, 1)
+                      .add(Duration(days: (item['week'] - 1) * 7));
+                  break;
+                case 'month':
+                  recordedAt = DateTime(item['year'], item['month'], 1);
+                  break;
+                case 'year':
+                  recordedAt = DateTime(item['year'], 1, 1);
+                  break;
+                default:
+                  // Fallback to current time if format is unknown
+                  recordedAt = DateTime.now();
+              }
+
+              sensorData['recorded_at'] = recordedAt.toIso8601String();
+              return SensorDataModel.fromJson(sensorData);
+            } catch (e) {
+              print('Error parsing aggregated data: $e for item: $item');
+              // Return a placeholder model in case of parsing error
+              return SensorDataModel(
+                id: 0,
+                temperature: 0,
+                humidity: 0,
+                status: 'Error',
+                recordedAt: DateTime.now(),
+              );
+            }
+          }).toList();
+        } else {
+          // For raw data
+          return data.map((e) {
+            try {
+              return SensorDataModel.fromJson(e);
+            } catch (e) {
+              print('Error parsing sensor data: $e for item: $e');
+              // Return a placeholder model in case of parsing error
+              return SensorDataModel(
+                id: 0,
+                temperature: 0,
+                humidity: 0,
+                status: 'Error',
+                recordedAt: DateTime.now(),
+              );
+            }
+          }).toList();
+        }
+      } else {
+        print('API returned error: ${response.data['message']}');
+        // Return empty list if API returns an error
+        throw Exception(
+            'API error: ${response.data['message'] ?? 'Unknown error'}');
+      }
+    } catch (e) {
+      print('Error fetching sensor history: $e');
+      // Propagate the error instead of returning dummy data
+      throw Exception('Failed to fetch sensor data: $e');
+    }
   }
 
   Future<SensorDataModel> getLatestSensorDataWithCache() async {
@@ -48,14 +151,31 @@ class SensorRepository {
     }
   }
 
-  Future<List<SensorDataModel>> getSensorHistoryWithCache() async {
+  Future<List<SensorDataModel>> getSensorHistoryWithCache({
+    String? start,
+    String? end,
+    int? limit,
+    String? groupBy,
+  }) async {
     try {
-      final history = await getSensorHistory();
-      for (final d in history) {
-        await SensorLocalDb.insertSensorData(d);
+      final history = await getSensorHistory(
+        start: start,
+        end: end,
+        limit: limit,
+        groupBy: groupBy,
+      );
+
+      // Only cache raw data, not aggregated data
+      if (groupBy == null) {
+        for (final d in history) {
+          await SensorLocalDb.insertSensorData(d);
+        }
       }
+
       return history;
     } catch (_) {
+      // If we're requesting aggregated data but the API call fails,
+      // we can't properly aggregate from local cache, so just return raw data
       return await SensorLocalDb.getAllSensorData();
     }
   }

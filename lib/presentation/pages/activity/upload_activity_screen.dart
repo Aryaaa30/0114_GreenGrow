@@ -200,6 +200,7 @@ class _UploadActivityScreenState extends State<UploadActivityScreen> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final repository = ActivityRepository();
+      final now = DateTime.now();
 
       await repository.createActivityLog(
         greenhouseId: widget.greenhouseId,
@@ -210,22 +211,7 @@ class _UploadActivityScreenState extends State<UploadActivityScreen> {
       );
 
       if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Berhasil'),
-            content: const Text('Foto berhasil diupload'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.pop(context, true); // Return to previous screen
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
+        Navigator.pop(context, true); // Kembali dan trigger refresh
       }
     } catch (e) {
       setState(() {
