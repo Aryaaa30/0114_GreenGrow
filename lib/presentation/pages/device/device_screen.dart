@@ -11,12 +11,16 @@ import '../../blocs/device_control/device_control_event.dart';
 import '../../blocs/device_control/device_control_state.dart';
 import '../../../data/repositories/device_control_repository.dart';
 import '../settings/settings_screen.dart';
+import '../../../core/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class DeviceScreen extends StatelessWidget {
   const DeviceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final userIdStr = Provider.of<AuthProvider>(context, listen: false).userId;
+    final userId = userIdStr != null ? int.tryParse(userIdStr) ?? 0 : 0;
     return BlocProvider(
       create: (context) => DeviceControlBloc(
         DeviceControlRepository(Dio(), const FlutterSecureStorage()),
@@ -217,7 +221,7 @@ class DeviceScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            UploadActivityScreen(greenhouseId: 1),
+                            UploadActivityScreen(greenhouseId: 1, userId: userId),
                       ),
                     );
                     break;

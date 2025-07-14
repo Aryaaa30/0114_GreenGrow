@@ -44,6 +44,7 @@ class _GreenhouseMapScreenState extends State<GreenhouseMapScreen> {
       }
 
       final position = await Geolocator.getCurrentPosition();
+      if (!mounted) return;
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
       });
@@ -57,6 +58,7 @@ class _GreenhouseMapScreenState extends State<GreenhouseMapScreen> {
   }
 
   void _updateMarkers(List<LocationModel> locations) {
+    if (!mounted) return;
     setState(() {
       _markers = locations.map((location) {
         return Marker(

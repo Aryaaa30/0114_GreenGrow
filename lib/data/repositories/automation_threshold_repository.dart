@@ -12,18 +12,17 @@ class AutomationThresholdRepository {
   Future<List<AutomationThresholdModel>> getThresholds() async {
     final token = await storage.read(key: 'auth_token');
     final response = await dio.get(
-      '$_baseUrl/automation-threshold',
+      '$_baseUrl/sensors/thresholds',
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
-    return (response.data['thresholds'] as List)
-        .map((e) => AutomationThresholdModel.fromJson(e))
-        .toList();
+    final list = response.data['data'] as List?;
+    if (list == null) return [];
+    return list.map((e) => AutomationThresholdModel.fromJson(e)).toList();
   }
 
   Future<void> upsertThreshold({
     required String parameter,
     required String deviceType,
-    double? minValue,
     double? maxValue,
   }) async {
     final token = await storage.read(key: 'auth_token');
@@ -32,7 +31,20 @@ class AutomationThresholdRepository {
       data: {
         'parameter': parameter,
         'device_type': deviceType,
-        'min_value': minValue,
+        'max_value': maxValue,
+      },
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+  }
+
+  Future<void> updateThresholdById({
+    required int id,
+    double? maxValue,
+  }) async {
+    final token = await storage.read(key: 'auth_token');
+    await dio.put(
+      '$_baseUrl/sensors/thresholds/$id',
+      data: {
         'max_value': maxValue,
       },
       options: Options(headers: {'Authorization': 'Bearer $token'}),

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/config/api_config.dart';
@@ -13,14 +14,19 @@ import '../dashboard/farmer_dashboard_screen.dart';
 import '../device/device_screen.dart';
 import 'activity_history_screen.dart';
 import '../settings/settings_screen.dart';
+import 'package:image/image.dart' as img;
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 
 class UploadActivityScreen extends StatefulWidget {
   final int greenhouseId;
+  final int userId;
 
   const UploadActivityScreen({
-    super.key,
+    Key? key,
     required this.greenhouseId,
-  });
+    required this.userId,
+  }) : super(key: key);
 
   @override
   State<UploadActivityScreen> createState() => _UploadActivityScreenState();
@@ -28,9 +34,9 @@ class UploadActivityScreen extends StatefulWidget {
 
 class _UploadActivityScreenState extends State<UploadActivityScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _descriptionController = TextEditingController();
-  String _selectedActivityType = 'watering';
-  XFile? _selectedImage;
+  final _descController = TextEditingController();
+  String? _activityType;
+  File? _photoFile;
   bool _isLoading = false;
   String? _error;
 
@@ -111,328 +117,176 @@ class _UploadActivityScreenState extends State<UploadActivityScreen> {
     return true;
   }
 
-  Future<void> _getImage(ImageSource source) async {
-    try {
-      final image = await ImagePicker().pickImage(
-        source: source,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        // Validasi ukuran file
-        final file = File(image.path);
-        final fileSize = await file.length();
-        if (fileSize > 5 * 1024 * 1024) {
-          // 5MB
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Ukuran foto maksimal 5MB'),
-              ),
-            );
-          }
-          return;
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+    if (pickedFile != null) {
+      File file = File(pickedFile.path);
+      // Cek ekstensi file
+      final ext = file.path.split('.').last.toLowerCase();
+      if (ext != 'jpg' && ext != 'jpeg' && ext != 'png') {
+        // Konversi ke JPEG
+        final bytes = await file.readAsBytes();
+        final decoded = img.decodeImage(bytes);
+        if (decoded != null) {
+          final jpgBytes = img.encodeJpg(decoded);
+          final newPath = file.path.replaceAll(RegExp(r'\.[^.]*$'), '.jpg');
+          final jpgFile = await File(newPath).writeAsBytes(jpgBytes);
+          file = jpgFile;
         }
-
-        setState(() {
-          _selectedImage = image;
-          _error = null;
-        });
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error mengambil foto: ${e.toString()}'),
-          ),
-        );
-      }
+      setState(() {
+        _photoFile = file;
+      });
     }
-  }
-
-  void _showImageSourceDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Pilih Sumber Foto'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Kamera'),
-              onTap: () {
-                Navigator.pop(context);
-                _getImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Galeri'),
-              onTap: () {
-                Navigator.pop(context);
-                _getImage(ImageSource.gallery);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _uploadActivity() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pilih foto terlebih dahulu'),
-        ),
-      );
+    if (!_formKey.currentState!.validate() || _photoFile == null) {
+      setState(() { _error = 'Lengkapi semua data dan ambil foto!'; });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_error!)));
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
+    setState(() { _isLoading = true; _error = null; });
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final repository = ActivityRepository();
-      final now = DateTime.now();
-
-      await repository.createActivityLog(
-        greenhouseId: widget.greenhouseId,
-        activityType: _selectedActivityType,
-        description: _descriptionController.text,
-        photo: _selectedImage!,
-        token: authProvider.token!,
+      final token = authProvider.token;
+      final userId = widget.userId;
+      if (token == null) throw Exception('Token tidak ditemukan, silakan login ulang.');
+      if (userId == 0) {
+        setState(() { _error = 'User tidak valid, silakan login ulang.'; });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_error!)));
+        setState(() { _isLoading = false; });
+        return;
+      }
+      final uri = Uri.parse('http://10.0.2.2:3000/api/activities');
+      var request = http.MultipartRequest('POST', uri);
+      request.fields['user_id'] = widget.userId.toString();
+      request.fields['greenhouse_id'] = widget.greenhouseId.toString();
+      request.fields['activity_type'] = _activityType!;
+      request.fields['description'] = _descController.text;
+      request.fields['activity_date'] = DateTime.now().toIso8601String();
+      // Pastikan nama file dan contentType benar
+      String uploadFilePath = _photoFile!.path;
+      String uploadFileName = uploadFilePath.split('/').last;
+      if (!uploadFileName.endsWith('.jpg') && !uploadFileName.endsWith('.jpeg') && !uploadFileName.endsWith('.png')) {
+        uploadFileName = uploadFileName.replaceAll(RegExp(r'\.[^.]*$'), '.jpg');
+      }
+      final mimeType = lookupMimeType(uploadFilePath) ?? 'image/jpeg';
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'photo',
+          uploadFilePath,
+          contentType: MediaType('image', 'jpeg'),
+          filename: uploadFileName,
+        ),
       );
-
-      if (mounted) {
-        Navigator.pop(context, true); // Kembali dan trigger refresh
+      request.headers['Authorization'] = 'Bearer $token';
+      final response = await request.send();
+      final respStr = await response.stream.bytesToString();
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Aktivitas berhasil diupload!')));
+        print('Token setelah upload: \\${authProvider.token}');
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/activity-history');
+        }
+      } else {
+        setState(() { _error = 'Upload gagal: ${response.statusCode}\n$respStr'; });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_error!)));
       }
     } catch (e) {
-      setState(() {
-        _error = _getErrorMessage(e);
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_error!),
-          ),
-        );
-      }
+      setState(() { _error = 'Error: $e'; });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_error!)));
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() { _isLoading = false; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Upload Aktivitas'),
-        ),
-        body: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Mengupload foto...'),
-            ],
-          ),
-        ),
-      );
+    int _selectedIndex = 3;
+    void _onItemTapped(int index) {
+      switch (index) {
+        case 0:
+          Navigator.pushReplacementNamed(context, '/');
+          break;
+        case 1:
+          Navigator.pushReplacementNamed(context, '/device');
+          break;
+        case 2:
+          Navigator.pushReplacementNamed(context, '/activity-history');
+          break;
+        case 3:
+          // Sudah di halaman ini
+          break;
+        case 4:
+          Navigator.pushReplacementNamed(context, '/settings');
+          break;
+      }
     }
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Upload Aktivitas'),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      appBar: AppBar(title: const Text('Upload Aktivitas')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
             children: [
-              // Preview Foto
-              if (_selectedImage != null)
-                Stack(
-                  children: [
-                    Container(
-                      height: 200,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        image: DecorationImage(
-                          image: FileImage(File(_selectedImage!.path)),
-                          fit: BoxFit.cover,
+              _photoFile != null
+                  ? Stack(
+                      children: [
+                        Image.file(_photoFile!, height: 180, width: double.infinity, fit: BoxFit.cover),
+                        Positioned(
+                          right: 0,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.red),
+                            onPressed: () => setState(() => _photoFile = null),
+                          ),
                         ),
-                      ),
+                      ],
+                    )
+                  : ElevatedButton(
+                      onPressed: _pickImage,
+                      child: const Text('Ambil Foto'),
                     ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () {
-                          setState(() {
-                            _selectedImage = null;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-
               const SizedBox(height: 16),
-
-              // Tombol Ambil Foto
-              CustomButton(
-                onPressed: _showImageSourceDialog,
-                child: const Text('Ambil Foto'),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Tipe Aktivitas
               DropdownButtonFormField<String>(
-                value: _selectedActivityType,
-                decoration: const InputDecoration(
-                  labelText: 'Tipe Aktivitas',
-                  border: OutlineInputBorder(),
-                ),
+                value: _activityType,
                 items: const [
-                  DropdownMenuItem(
-                    value: 'watering',
-                    child: Text('Penyiraman'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'fertilizing',
-                    child: Text('Pemupukan'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'pruning',
-                    child: Text('Pemangkasan'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'pest_control',
-                    child: Text('Pengendalian Hama'),
-                  ),
+                  DropdownMenuItem(value: 'penyiraman', child: Text('Penyiraman')),
+                  DropdownMenuItem(value: 'pemupukan', child: Text('Pemupukan')),
+                  DropdownMenuItem(value: 'pemangkasan', child: Text('Pemangkasan')),
                 ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedActivityType = value!;
-                  });
-                },
+                onChanged: (val) => setState(() => _activityType = val),
+                validator: (val) => val == null ? 'Pilih tipe aktivitas' : null,
+                decoration: const InputDecoration(labelText: 'Tipe Aktivitas'),
               ),
-
               const SizedBox(height: 16),
-
-              // Deskripsi
-              CustomTextField(
-                controller: _descriptionController,
-                labelText: 'Deskripsi',
+              TextFormField(
+                controller: _descController,
                 maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Deskripsi tidak boleh kosong';
-                  }
-                  if (value.length < 10) {
-                    return 'Deskripsi minimal 10 karakter';
-                  }
-                  return null;
-                },
+                decoration: const InputDecoration(labelText: 'Deskripsi'),
+                validator: (val) => val == null || val.isEmpty ? 'Deskripsi tidak boleh kosong' : null,
               ),
-
+              const SizedBox(height: 24),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                      onPressed: _uploadActivity,
+                      child: const Text('Upload'),
+                    ),
               if (_error != null) ...[
                 const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontSize: 14,
-                  ),
-                ),
+                Text(_error!, style: const TextStyle(color: Colors.red)),
               ],
-
-              const SizedBox(height: 24),
-
-              // Tombol Upload
-              CustomButton(
-                onPressed: _isLoading ? null : _uploadActivity,
-                child: _isLoading
-                    ? const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Text('Mengupload...'),
-                        ],
-                      )
-                    : const Text('Upload'),
-              ),
             ],
           ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        currentIndex: 3, // Index untuk tab Aktivitas
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FarmerDashboardScreen(),
-                ),
-              );
-              break;
-            case 1:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const DeviceScreen(),
-                ),
-              );
-              break;
-            case 2:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      ActivityHistoryScreen(greenhouseId: widget.greenhouseId),
-                ),
-              );
-              break;
-            case 3:
-              // Sudah di halaman ini
-              break;
-            case 4:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SettingsScreen(),
-                ),
-              );
-              break;
-          }
-        },
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
         selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         items: const [
@@ -463,7 +317,7 @@ class _UploadActivityScreenState extends State<UploadActivityScreen> {
 
   @override
   void dispose() {
-    _descriptionController.dispose();
+    _descController.dispose();
     super.dispose();
   }
 }

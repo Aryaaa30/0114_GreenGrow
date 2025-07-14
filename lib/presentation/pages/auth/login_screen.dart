@@ -62,8 +62,12 @@ class _LoginScreenState extends State<LoginScreen> {
             final authProvider =
                 Provider.of<AuthProvider>(context, listen: false);
             await authProvider.setToken(state.token);
+            await authProvider.setUserId(state.user.id.toString());
+            await authProvider.setUserRole(state.user.role);
             authProvider.updateFcmTokenToBackend();
-            if (state.user.role == 'admin') {
+            debugPrint('User role after login: \'${state.user.role}\'');
+            final userRole = state.user.role?.toLowerCase() ?? '';
+            if (userRole == 'admin') {
               Navigator.pushReplacementNamed(context, '/admin-dashboard');
             } else {
               Navigator.pushReplacementNamed(context, '/farmer-dashboard');

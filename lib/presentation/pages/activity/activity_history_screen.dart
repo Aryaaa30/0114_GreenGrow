@@ -17,6 +17,9 @@ import '../../blocs/sensor/sensor_event.dart';
 import '../../blocs/sensor/sensor_state.dart';
 import 'package:dio/dio.dart';
 import '../settings/settings_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../data/repositories/sensor_repository.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ActivityHistoryScreen extends StatefulWidget {
   final int greenhouseId;
@@ -73,6 +76,8 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
         return type;
     }
   }
+
+  double get _filterButtonHeight => 36;
 
   @override
   Widget build(BuildContext context) {
@@ -212,15 +217,6 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text('Filter data sensor berdasarkan:'),
-                                        SizedBox(height: 8),
-                                        Text('• 24 Jam: Data per jam selama 24 jam terakhir'),
-                                        Text('• 7 Hari: Data harian selama seminggu terakhir'),
-                                        Text('• 30 Hari: Data harian selama sebulan terakhir'),
-                                        Text('• 3 Bulan: Data mingguan selama 3 bulan terakhir'),
-                                        Text('• 6 Bulan: Data bulanan selama 6 bulan terakhir'),
-                                        Text('• 1 Tahun: Data bulanan selama setahun terakhir'),
-                                        SizedBox(height: 8),
                                         Text('Gunakan "Filter Kustom" untuk rentang waktu dan agregasi yang lebih spesifik.'),
                                       ],
                                     ),
@@ -238,9 +234,20 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      const SizedBox(
+                      SizedBox(
                         height: 400,
-                        child: SensorHistoryWidget(),
+                        child: BlocProvider(
+                          create: (context) {
+                            final token = Provider.of<AuthProvider>(context, listen: false).token;
+                            final bloc = SensorBloc(
+                              SensorRepository(Dio(), const FlutterSecureStorage()),
+                            );
+                            // If you dispatch FetchLatestSensorData, do it like this:
+                            // bloc.add(FetchLatestSensorData(token: token!));
+                            return bloc;
+                          },
+                          child: SensorHistoryWidget(),
+                        ),
                       ),
                     ],
                   ),
@@ -273,7 +280,7 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        currentIndex: 0,
+        currentIndex: 2,
         onTap: (index) {
           switch (index) {
             case 0:
@@ -301,10 +308,12 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
               );
               break;
             case 3:
+              final userIdStr = Provider.of<AuthProvider>(context, listen: false).userId;
+              final userId = userIdStr != null ? int.tryParse(userIdStr) ?? 0 : 0;
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => UploadActivityScreen(greenhouseId: widget.greenhouseId),
+                  builder: (context) => UploadActivityScreen(greenhouseId: widget.greenhouseId, userId: userId),
                 ),
               );
               break;

@@ -3,6 +3,7 @@ import '../dashboard/farmer_dashboard_screen.dart';
 import '../device/device_screen.dart';
 import '../activity/activity_history_screen.dart';
 import '../activity/upload_activity_screen.dart';
+import '../map/greenhouse_map_screen.dart';
 import '../profile/profile_farmer_screen.dart';
 import '../privacy/privacy_screen.dart';
 import '../notification/notification_screen.dart';
@@ -10,6 +11,7 @@ import '../about/about_screen.dart';
 import '../supports/supports_screen.dart';
 import '../auth/register_screen.dart';
 import '../auth/login_screen.dart';
+import 'threshold_screen.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/auth_provider.dart';
 
@@ -66,6 +68,24 @@ class SettingsScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => PrivacyScreen(),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 12),
+                  _buildSettingsItem('Pengaturan Ambang Batas', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ThresholdScreen(),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 12),
+                  _buildSettingsItem('Lokasi Greenhouse', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const GreenhouseMapScreen(),
                       ),
                     );
                   }),
@@ -146,10 +166,12 @@ class SettingsScreen extends StatelessWidget {
               );
               break;
             case 3:
+              final userIdStr = Provider.of<AuthProvider>(context, listen: false).userId;
+              final userId = userIdStr != null ? int.tryParse(userIdStr) ?? 0 : 0;
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => UploadActivityScreen(greenhouseId: 1),
+                  builder: (context) => UploadActivityScreen(greenhouseId: 1, userId: userId),
                 ),
               );
               break;

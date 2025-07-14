@@ -5,7 +5,13 @@ abstract class SensorEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class FetchLatestSensorData extends SensorEvent {}
+class FetchLatestSensorData extends SensorEvent {
+  final String token;
+  FetchLatestSensorData({required this.token});
+
+  @override
+  List<Object?> get props => [token];
+}
 
 class FetchSensorHistory extends SensorEvent {
   final String? start;

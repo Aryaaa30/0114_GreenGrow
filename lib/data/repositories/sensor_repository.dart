@@ -12,8 +12,11 @@ class SensorRepository {
 
   SensorRepository(this.dio, [this.storage]);
 
-  Future<SensorDataModel> getLatestSensorData() async {
-    final response = await dio.get('$_baseUrl/sensor/latest');
+  Future<SensorDataModel> getLatestSensorData({required String token}) async {
+    final response = await dio.get(
+      '$_baseUrl/sensors/latest',
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
     return SensorDataModel.fromJson(response.data['data']);
   }
 
@@ -139,9 +142,9 @@ class SensorRepository {
     }
   }
 
-  Future<SensorDataModel> getLatestSensorDataWithCache() async {
+  Future<SensorDataModel> getLatestSensorDataWithCache({required String token}) async {
     try {
-      final data = await getLatestSensorData();
+      final data = await getLatestSensorData(token: token);
       await SensorLocalDb.insertSensorData(data);
       return data;
     } catch (_) {
