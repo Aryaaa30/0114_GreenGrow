@@ -49,7 +49,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               password: _passwordController.text,
               confirmPassword: _confirmPasswordController.text,
               fullName: _fullNameController.text,
-              phoneNumber: _phoneNumberController.text,
+              phoneNumber: _phoneNumberController.text.isNotEmpty ? _phoneNumberController.text : null,
               roleId: _farmerRoleId, // Always use farmer role ID
             ),
           );
@@ -60,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocListener<AuthBloc, AuthState>(
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -72,13 +72,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             );
+          } else if (state is AuthSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+            Navigator.pushReplacementNamed(context, '/login');
           } else if (state is Authenticated) {
             // Update FCM token ke backend setelah register
             final authProvider =
                 Provider.of<AuthProvider>(context, listen: false);
+            await authProvider.loadUserProfile();
             authProvider.updateFcmTokenToBackend();
-            // Since we only register farmers, we always navigate to farmer dashboard
-            Navigator.pushReplacementNamed(context, '/farmer-dashboard');
+            // Setelah register berhasil, arahkan ke halaman login
+            Navigator.pushReplacementNamed(context, '/login');
           }
         },
         child: Stack(
@@ -109,23 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ),
+                        // Hapus IconButton back di sini
                         const Expanded(
                           child: Text(
                             'Register',

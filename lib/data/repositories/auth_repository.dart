@@ -26,4 +26,6 @@ abstract class AuthRepository {
   Future<void> logout();
 
   Future<List<Map<String, dynamic>>> getActivityLogs();
+  
+  Future<UserModel> getUserProfile({required String token});
 } 

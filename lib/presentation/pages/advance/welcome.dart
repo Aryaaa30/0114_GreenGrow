@@ -287,7 +287,7 @@ class _WelcomePageState extends State<WelcomePage>
                                     ),
                                   ),
                                   child: const Text(
-                                    "Environmental charity, we're on a mission to make it simple for everyone to help the environment by planting each one tree!",
+                                    "GreenGrow hadir untuk membantu petani menjaga lingkungan dan tanaman dengan cara yang lebih mudah, cerdas, dan berkelanjutan",
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 16,

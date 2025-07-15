@@ -3,16 +3,26 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
 import '../services/notification_service.dart';
 import 'package:http/http.dart' as http;
+import '../../data/models/user_model.dart';
+import '../../data/repositories/auth_repository_impl.dart';
+import 'package:dio/dio.dart';
 
 class AuthProvider with ChangeNotifier {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final AuthRepositoryImpl _authRepository = AuthRepositoryImpl(
+    dio: Dio(),
+    secureStorage: const FlutterSecureStorage(),
+  );
+  
   String? _token;
   String? _userId;
   String? _userRole;
+  UserModel? _userProfile;
 
   String? get token => _token;
   String? get userId => _userId;
   String? get userRole => _userRole;
+  UserModel? get userProfile => _userProfile;
   bool get isAuthenticated => _token != null;
 
   Future<void> setToken(String token) async {
@@ -44,8 +54,20 @@ class AuthProvider with ChangeNotifier {
     _token = null;
     _userId = null;
     _userRole = null;
+    _userProfile = null;
     await _storage.deleteAll();
     notifyListeners();
+  }
+
+  Future<void> loadUserProfile() async {
+    if (_token != null) {
+      try {
+        _userProfile = await _authRepository.getUserProfile(token: _token!);
+        notifyListeners();
+      } catch (e) {
+        print('Error loading user profile: $e');
+      }
+    }
   }
 
   Future<void> updateFcmTokenToBackend() async {

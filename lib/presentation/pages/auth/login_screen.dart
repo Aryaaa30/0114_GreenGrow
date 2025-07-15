@@ -64,6 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
             await authProvider.setToken(state.token);
             await authProvider.setUserId(state.user.id.toString());
             await authProvider.setUserRole(state.user.role);
+            await authProvider.loadUserProfile();
             authProvider.updateFcmTokenToBackend();
             debugPrint('User role after login: \'${state.user.role}\'');
             final userRole = state.user.role?.toLowerCase() ?? '';
@@ -251,21 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                       ),
                                       const Spacer(),
-                                      TextButton(
-                                        onPressed: () {
-                                          // Navigate to forgot password screen
-                                        },
-                                        child: Text(
-                                          'Forgot Password?',
-                                          style: TextStyle(
-                                            color:
-                                                Colors.white.withOpacity(0.9),
-                                            fontSize: 14,
-                                            decoration:
-                                                TextDecoration.underline,
-                                          ),
-                                        ),
-                                      ),
+                                      // Hapus TextButton Forgot Password di sini
                                     ],
                                   ),
                                   const SizedBox(height: 32),

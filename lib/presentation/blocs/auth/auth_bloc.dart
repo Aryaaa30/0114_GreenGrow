@@ -49,7 +49,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         roleId: event.roleId,
         profilePhoto: event.profilePhoto,
       );
-      emit(Authenticated(response['user'], response['token']));
+      // Jika response tidak ada token, anggap register sukses tanpa login otomatis
+      if (response['token'] == null) {
+        emit(AuthSuccess(response['message'] ?? 'Register berhasil'));
+      } else {
+        emit(Authenticated(response['user'], response['token']));
+      }
     } catch (e) {
       emit(AuthError(e.toString()));
     }

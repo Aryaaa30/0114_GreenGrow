@@ -62,18 +62,19 @@ class AuthRepositoryImpl implements AuthRepository {
     String? profilePhoto,
   }) async {
     try {
+      final requestData = {
+        'username': username,
+        'email': email,
+        'password': password,
+        'confirm_password': confirmPassword,
+        'full_name': fullName,
+        'phone_number': phoneNumber ?? '',
+        'role_id': roleId,
+        'profile_photo': profilePhoto,
+      };
       final response = await _dio.post(
         '$_baseUrl/auth/register',
-        data: {
-          'username': username,
-          'email': email,
-          'password': password,
-          'confirm_password': confirmPassword,
-          'full_name': fullName,
-          'phone_number': phoneNumber,
-          'role_id': roleId,
-          'profile_photo': profilePhoto,
-        },
+        data: requestData,
       );
       final data = response.data;
       if (data == null || data is! Map<String, dynamic>) {
@@ -149,6 +150,30 @@ class AuthRepositoryImpl implements AuthRepository {
         ),
       );
       return List<Map<String, dynamic>>.from(response.data['logs']);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  @override
+  Future<UserModel> getUserProfile({required String token}) async {
+    try {
+      final response = await _dio.get(
+        '$_baseUrl/auth/me',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+      final data = response.data;
+      print('User profile response: ' + data.toString());
+      if (data == null || data is! Map<String, dynamic>) {
+        throw Exception('Failed to get user profile: response tidak valid dari server');
+      }
+      if (data['status'] == 'success') {
+        return UserModel.fromJson(data['data']);
+      } else {
+        throw Exception(data['message'] ?? 'Failed to get user profile');
+      }
     } on DioException catch (e) {
       throw _handleError(e);
     }

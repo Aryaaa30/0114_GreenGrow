@@ -14,7 +14,7 @@ class NotificationBadge extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications),
+              icon: const Icon(Icons.notifications, color: Colors.white),
               onPressed: () {
                 Navigator.push(
                   context,
